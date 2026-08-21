@@ -21,7 +21,7 @@ def aluno(nome):
     return jsonify({
         "aluno": nome,
         "ambiente": ambiente,
-        "mensagem": "Bem-vindo ao Mini Radar ENEM"
+        "mensagem": f"Bem-vindo {nome} ao Mini Radar ENEM"
     })
 
 @app.route("/nota/<int:nota>")
