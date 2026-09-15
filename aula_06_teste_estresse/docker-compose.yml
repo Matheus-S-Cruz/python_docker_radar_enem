@@ -1,0 +1,45 @@
+services:
+  web_app:
+    build: ./web
+    ports:
+      - "5000:5000"
+    environment:
+      CALCULADORA_URL: http://calculadora:8000/api/CalculaNota
+    depends_on:
+      calculadora:
+        condition: service_healthy
+    networks:
+      - radar_network
+
+  calculadora:
+    build: ./api
+    command: ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-1}"]
+    ports:
+      - "8000:8000"
+    environment:
+      API_WORKERS: ${API_WORKERS:-1}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - radar_network
+
+  locust_tester:
+    image: locustio/locust:2.41.6
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./locustfile.py:/mnt/locust/locustfile.py:ro
+    command: -f /mnt/locust/locustfile.py --host http://calculadora:8000
+    depends_on:
+      calculadora:
+        condition: service_healthy
+    networks:
+      - radar_network
+
+networks:
+  radar_network:
+    driver: bridge
+

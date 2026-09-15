@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Radar ENEM - Teste de Estresse</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #eef3f8; color: #17324d; }
+    main { max-width: 760px; margin: 60px auto; padding: 32px; background: white; border-radius: 16px; box-shadow: 0 10px 35px #17324d1f; }
+    h1 { margin-top: 0; color: #075985; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+    label { display: grid; gap: 6px; font-weight: 600; }
+    input { padding: 10px; border: 1px solid #94a3b8; border-radius: 8px; font: inherit; }
+    button { margin-top: 20px; padding: 12px 18px; border: 0; border-radius: 8px; color: white; background: #0369a1; font-weight: 700; cursor: pointer; }
+    #resultado { margin-top: 20px; padding: 14px; border-radius: 8px; background: #e0f2fe; min-height: 24px; }
+    .erro { background: #fee2e2 !important; color: #991b1b; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Radar ENEM</h1>
+  <p>Informe as cinco notas para simular o cálculo desacoplado da nota de corte.</p>
+  <form id="form-notas">
+    <div class="grid">
+      <label>Linguagens <input type="number" min="0" max="1000" step="0.1" value="720.5" required></label>
+      <label>Humanas <input type="number" min="0" max="1000" step="0.1" value="680" required></label>
+      <label>Natureza <input type="number" min="0" max="1000" step="0.1" value="810.2" required></label>
+      <label>Matemática <input type="number" min="0" max="1000" step="0.1" value="640.8" required></label>
+      <label>Redação <input type="number" min="0" max="1000" step="0.1" value="780" required></label>
+    </div>
+    <button type="submit">Calcular nota</button>
+  </form>
+  <div id="resultado" role="status">Aguardando cálculo.</div>
+</main>
+<script>
+const form = document.querySelector('#form-notas');
+const resultado = document.querySelector('#resultado');
+form.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  resultado.classList.remove('erro');
+  resultado.textContent = 'Calculando...';
+  const notas = [...form.querySelectorAll('input')].map(campo => Number(campo.value));
+  try {
+    const resposta = await fetch('/exibir_nota', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({notas})
+    });
+    const dados = await resposta.json();
+    resultado.textContent = dados.mensagem || dados.erro;
+    if (!resposta.ok) resultado.classList.add('erro');
+  } catch (erro) {
+    resultado.textContent = 'Não foi possível comunicar com a aplicação.';
+    resultado.classList.add('erro');
+  }
+});
+</script>
+</body>
+</html>
+
