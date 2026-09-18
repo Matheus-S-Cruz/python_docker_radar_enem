@@ -2,7 +2,7 @@
 
 ## 1. Descrição
 
-Descrever o Radar ENEM e o serviço executado.
+O Radar ENEM é uma aplicação Flask conteinerizada utilizada para simular práticas de operação em ambiente de produção, incluindo health check, monitoramento, recuperação e versionamento.
 
 ## 2. Pré-requisitos
 
@@ -57,7 +57,7 @@ docker logs radar-enem
 Informação relevante encontrada:
 
 ```text
-Ambas as prints da part 7, os logs
+Os logs registraram as requisições HTTP realizadas aos endpoints /, /health e /status, permitindo acompanhar o comportamento da aplicação durante a execução.
 ```
 
 ## 7. Monitoramento
