@@ -40,7 +40,10 @@ aula_11_redes/
     ├── docker-compose.yml        <- 3 servicos + 2 redes (inclui o radar-db que faltava no PDF)
     ├── nginx.conf                <- reverse proxy -> radar-backend
     ├── .gitignore
-    ├── evidencias/               <- salve aqui os prints / .txt (ver evidencias/README.md)
+    ├── evidencias/               <- prints / .txt + diagrama da VPC (ver evidencias/README.md)
+    │   ├── README.md
+    │   ├── diagrama_vpc.svg      <- diagrama da VPC pronto (exportar p/ 04_diagrama_vpc.png)
+    │   └── diagrama_vpc.mmd      <- fonte Mermaid do diagrama
     └── scripts/
         ├── 00_passo1_redes_manuais.sh   <- Passo 1 (cria/inspeciona/remove redes na mao)
         ├── 01_subir_ambiente.sh         <- docker compose up -d + espera o banco
@@ -48,8 +51,12 @@ aula_11_redes/
         ├── 03_evidencia2_isolamento.sh
         ├── 04_evidencia3_desafios.sh    <- os 4 desafios investigativos
         ├── 05_capturar_evidencias.sh    <- salva todas as saidas em .txt
+        ├── 06_gerar_diagrama_png.sh     <- converte o diagrama SVG -> PNG
         └── 99_limpar.sh                 <- docker compose down -v
 ```
+
+> O repositório também traz um `.devcontainer/` na **raiz** (Docker-in-Docker) para rodar o
+> laboratório direto no GitHub Codespaces sem configuração manual.
 
 > **Nota:** o `docker-compose.yml` do PDF não mostrava o serviço do banco, mas os desafios usam
 > `radar-db` em `172.20.20.50`. Por isso o serviço `db-postgres` (container `radar-db`,
@@ -59,16 +66,18 @@ aula_11_redes/
 
 ## Como rodar no GitHub Codespaces
 
-> O Codespaces já vem com Docker e Docker Compose instalados.
+> O repositório inclui um `.devcontainer/` na raiz que provisiona **Docker-in-Docker** e já
+> ajusta as permissões dos scripts automaticamente (via `postCreateCommand`). Ao criar o
+> Codespace, aguarde a mensagem "Ambiente pronto!" no terminal de setup.
 
 ### 1. Abrir o Codespace e entrar na pasta
 
 No repositório do GitHub: **Code → Codespaces → Create codespace on `aula-11-redes-containers`**
-(ou na branch já mesclada). No terminal do Codespace:
+(ou na branch já mesclada). O devcontainer sobe automaticamente. No terminal do Codespace:
 
 ```bash
 cd aula_11_redes/radar-enem-network
-chmod +x scripts/*.sh      # garante permissao de execucao
+# As permissoes ja foram ajustadas pelo devcontainer; se precisar: chmod +x scripts/*.sh
 ```
 
 ### 2. (Opcional, mas recomendado) Passo 1 — redes manuais
@@ -129,10 +138,14 @@ bash scripts/04_evidencia3_desafios.sh
 ```
 Salve como `evidencias/03_desafios.png`.
 
-### Diagrama (Incremento 4)
-Crie o diagrama da VPC `10.20.0.0/16` (3 sub-redes, CIDRs, IGW, NAT GW, setas de tráfego).
-Sugestões: [draw.io / diagrams.net](https://app.diagrams.net), Excalidraw ou PowerPoint.
-Salve como `evidencias/04_diagrama_vpc.png`. (A especificação textual está no `RELATORIO.md`.)
+### Diagrama (Incremento 4) — já incluído
+O diagrama da VPC `10.20.0.0/16` já está pronto em `evidencias/diagrama_vpc.svg` (e `.mmd` Mermaid).
+Para gerar o PNG para o PDF:
+```bash
+bash scripts/06_gerar_diagrama_png.sh      # cria evidencias/04_diagrama_vpc.png
+```
+Se preferir, abra o `.svg` no navegador e salve como PNG, ou edite o `.mmd` em
+[mermaid.live](https://mermaid.live) e exporte por lá.
 
 ### Alternativa: salvar as saídas em texto
 Para gerar `.txt` de todas as evidências de uma vez (útil para anexar junto dos prints):
