@@ -1,0 +1,25 @@
+===== (a) Teste 1: Acesso externo via Proxy (localhost:8080) =====
+HTTP/1.1 200 OK
+Server: nginx/1.31.8
+Date: Thu, 05 Nov 2026 21:38:46 GMT
+Content-Type: text/html
+Content-Length: 81
+Connection: keep-alive
+Last-Modified: Thu, 05 Nov 2026 21:32:59 GMT
+ETag: "6aecf60b-51"
+Accept-Ranges: bytes
+X-Proxy-Layer: frontend-net-dmz
+
+{"aplicacao":"Mini Radar ENEM","status":"ONLINE","banco_privado":"172.20.20.50"}
+
+===== (b) Teste 2: radar-proxy -> radar-db  (DEVE FALHAR) =====
+--- nc -z -v -w5 radar-db 5432 a partir do proxy (resolucao+conexao pelo NOME) ---
+nc: bad address 'radar-db'
+>>> Como esperado: o proxy NAO descobre nem alcanca radar-db
+>>> (nome fora do escopo da backend-net e sem rota ate a rede interna).
+
+===== (c) Teste 3: radar-backend -> radar-db  (DEVE FUNCIONAR) =====
+--- nc -z -v -w5 radar-db 5432 a partir do backend (resolucao+conexao pelo NOME) ---
+radar-db (172.20.20.50:5432) open
+>>> SUCESSO: backend descobre radar-db pelo nome e conecta na porta 5432
+>>> (backend e multi-homed: participa da backend-net).

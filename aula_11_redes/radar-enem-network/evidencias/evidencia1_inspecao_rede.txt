@@ -2,8 +2,8 @@
 [
     {
         "Name": "radar-enem-network_backend-net",
-        "Id": "a14d80dacb94095cc9372a374a66864dd1f153ab6d7e3fdd8f0d65360f6beaa4",
-        "Created": "2026-11-05T20:58:03.919157946Z",
+        "Id": "bd819890b808097612481869747495f6c5be7bd5e5b2b758cad5c6f4a7d35c7d",
+        "Created": "2026-11-05T21:32:51.271380765Z",
         "Scope": "local",
         "Driver": "bridge",
         "EnableIPv4": true,
@@ -33,17 +33,17 @@
             "com.docker.compose.version": "5.6.1"
         },
         "Containers": {
-            "34c4a0cd369080ca3095b42a0d83091fc5fbcdc4631191c652cfd29334325088": {
+            "cea97850f3b92b38a5e7b066d0c0288f888c97c6e05c1a403df41e6ca67a7eca": {
                 "Name": "radar-db",
-                "EndpointID": "8883f2bfa9e7fe701bff75b18a04f737fae3007284d2c64e0d5ded0b4eeb5414",
-                "MacAddress": "76:d9:47:e2:67:a0",
+                "EndpointID": "147bf0555c2f381175d508c9bff81181cf3bce52f186e74ba6cf3a5d3ded7a10",
+                "MacAddress": "c2:7f:59:cd:4d:26",
                 "IPv4Address": "172.20.20.50/24",
                 "IPv6Address": ""
             },
-            "52c387d6d771bb8c86bcddf3a3741a9ebf3f3e37d1807ce7b518b24f9faacac3": {
+            "ecdaeff296c68e4819cdb4815a77ae9e331d4d0110fb0be24f60cc7b44542dc1": {
                 "Name": "radar-backend",
-                "EndpointID": "b468087c65328ae4c56e78effff7e81b927f3ceb79e3593458918090eb967506",
-                "MacAddress": "f2:e6:96:e9:46:cc",
+                "EndpointID": "9935d3a62c2692ed5f73fea8c524a8c9dfe8831448b06d593fdddf492d86c137",
+                "MacAddress": "56:4f:38:f3:5e:66",
                 "IPv4Address": "172.20.20.20/24",
                 "IPv6Address": ""
             }
