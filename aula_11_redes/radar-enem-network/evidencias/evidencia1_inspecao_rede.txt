@@ -1,0 +1,68 @@
+===== docker network inspect radar-enem-network_backend-net =====
+[
+    {
+        "Name": "radar-enem-network_backend-net",
+        "Id": "a14d80dacb94095cc9372a374a66864dd1f153ab6d7e3fdd8f0d65360f6beaa4",
+        "Created": "2026-11-05T20:58:03.919157946Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.20.20.0/24",
+                    "Gateway": "172.20.20.1"
+                }
+            ]
+        },
+        "Internal": true,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {},
+        "Labels": {
+            "com.docker.compose.config-hash": "dea8b117ff3718a5708a4a145a981d334586bc90ab74e1c9fabb427f31e4e6ab",
+            "com.docker.compose.network": "backend-net",
+            "com.docker.compose.project": "radar-enem-network",
+            "com.docker.compose.version": "5.6.1"
+        },
+        "Containers": {
+            "34c4a0cd369080ca3095b42a0d83091fc5fbcdc4631191c652cfd29334325088": {
+                "Name": "radar-db",
+                "EndpointID": "8883f2bfa9e7fe701bff75b18a04f737fae3007284d2c64e0d5ded0b4eeb5414",
+                "MacAddress": "76:d9:47:e2:67:a0",
+                "IPv4Address": "172.20.20.50/24",
+                "IPv6Address": ""
+            },
+            "52c387d6d771bb8c86bcddf3a3741a9ebf3f3e37d1807ce7b518b24f9faacac3": {
+                "Name": "radar-backend",
+                "EndpointID": "b468087c65328ae4c56e78effff7e81b927f3ceb79e3593458918090eb967506",
+                "MacAddress": "f2:e6:96:e9:46:cc",
+                "IPv4Address": "172.20.20.20/24",
+                "IPv6Address": ""
+            }
+        },
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "172.20.20.0/24": {
+                        "IPsInUse": 5,
+                        "DynamicIPsAvailable": 251
+                    }
+                }
+            }
+        }
+    }
+]
+
+===== Resumo (CIDR / Internal / Containers e IPs) =====
+Subnet: 172.20.20.0/24 | Internal: true
+radar-db -> 172.20.20.50/24
+radar-backend -> 172.20.20.20/24
+
