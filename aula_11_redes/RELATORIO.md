@@ -36,8 +36,10 @@ Comandos: `ip addr show`, `ip route show` (dentro de `radar-backend`).
 ### Desafio 3 — Chaos: queda da rota pública e erro 502
 
 - Ao executar `docker network disconnect radar-enem-network_frontend-net radar-backend`, o proxy
-  perde o caminho até o backend. O acesso a `localhost:8080` passa a retornar **`502 Bad Gateway`**
-  e o log do proxy registra algo como *"no live upstreams"/"connect() failed"* para `radar-backend`.
+  perde o caminho até o backend. O acesso a `localhost:8080` passa a retornar um **erro de gateway**
+  (`502 Bad Gateway` quando a conexão é recusada, ou `504 Gateway Time-out` quando ela estoura o
+  `proxy_connect_timeout` — ambos indicam que o upstream ficou inacessível) e o log do proxy registra
+  algo como *"connect() failed"/"upstream timed out"* para `radar-backend`.
 - `docker network connect --ip 172.20.10.20 radar-enem-network_frontend-net radar-backend`
   **restaura a conectividade sem reiniciar** os containers — o próximo request volta a **200 OK**.
 
