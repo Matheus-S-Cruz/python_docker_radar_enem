@@ -4,30 +4,35 @@
 #   (a) Proxy publico funcionando em localhost:8080
 #   (b) FALHA de comunicacao radar-proxy -> radar-db (proxy nao esta na backend-net)
 #   (c) SUCESSO de comunicacao radar-backend -> radar-db (backend e multi-homed)
-set -euo pipefail
+#
+# NOTA sobre resolucao de nomes:
+#   O nslookup do busybox concatena o "search domain" injetado pelo Codespaces
+#   (ex.: *.cx.internal.cloudapp.net) e pode retornar NXDOMAIN ate para nomes que o
+#   DNS do Docker resolve. Por isso a prova de "descoberta de servico" aqui e feita
+#   pela CONEXAO REAL usando o NOME do container (nc -z radar-db 5432): se conecta,
+#   e porque o nome resolveu (DNS 127.0.0.11) E existe rota ate ele. Isso evita o
+#   artefato do nslookup e demonstra o isolamento de forma inequivoca.
+set -uo pipefail   # sem -e: o item (b) inclui comandos que FALHAM de proposito
 
 echo "===== (a) Teste 1: Acesso externo via Proxy (localhost:8080) ====="
-curl -i http://localhost:8080
+curl -si http://localhost:8080 | sed -n '1,20p'
 echo
 
 echo "===== (b) Teste 2: radar-proxy -> radar-db  (DEVE FALHAR) ====="
-echo "--- nslookup radar-db a partir do proxy (nao resolve: proxy nao ve a backend-net) ---"
-docker exec radar-proxy nslookup radar-db || echo ">>> Como esperado: o proxy NAO resolve radar-db."
-echo
-echo "--- tentativa de conexao TCP proxy -> 172.20.20.50:5432 (nc, timeout 5s) ---"
-if docker exec radar-proxy sh -c "which nc >/dev/null 2>&1"; then
-  docker exec radar-proxy sh -c "nc -z -w 5 172.20.20.50 5432" \
-    && echo ">>> INESPERADO: conectou." \
-    || echo ">>> Como esperado: o proxy NAO alcanca o banco (sem rota para a backend-net)."
+echo "--- nc -z -v -w5 radar-db 5432 a partir do proxy (resolucao+conexao pelo NOME) ---"
+if docker exec radar-proxy nc -z -v -w 5 radar-db 5432 2>&1; then
+  echo ">>> INESPERADO: o proxy alcancou radar-db."
 else
-  echo "(nc indisponivel no proxy; a falha de DNS acima ja comprova o isolamento)"
+  echo ">>> Como esperado: o proxy NAO descobre nem alcanca radar-db"
+  echo ">>> (nome fora do escopo da backend-net e sem rota ate a rede interna)."
 fi
 echo
 
 echo "===== (c) Teste 3: radar-backend -> radar-db  (DEVE FUNCIONAR) ====="
-echo "--- nslookup radar-db a partir do backend (resolve: backend esta na backend-net) ---"
-docker exec radar-backend nslookup radar-db || true
-echo
-echo "--- conexao TCP backend -> 172.20.20.50:5432 ---"
-docker exec radar-backend sh -c "nc -z -w 5 172.20.20.50 5432 && echo '>>> SUCESSO: backend alcanca o banco na porta 5432.'" \
-  || echo ">>> Falhou (verifique se o banco subiu)."
+echo "--- nc -z -v -w5 radar-db 5432 a partir do backend (resolucao+conexao pelo NOME) ---"
+if docker exec radar-backend nc -z -v -w 5 radar-db 5432 2>&1; then
+  echo ">>> SUCESSO: backend descobre radar-db pelo nome e conecta na porta 5432"
+  echo ">>> (backend e multi-homed: participa da backend-net)."
+else
+  echo ">>> Falhou (verifique se o banco subiu)."
+fi
