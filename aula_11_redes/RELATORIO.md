@@ -77,11 +77,17 @@ Comandos: `ip addr show`, `ip route show` (dentro de `radar-backend`).
 | DNS interno (`127.0.0.11`) | Route 53 Private Hosted Zone / Azure Private DNS | Resolver nomes de serviços internos sem fixar IPs. |
 | Container efêmero (Desafio 4) | Bastion Host / SSM Session Manager | Manutenção e auditoria seguras na sub-rede privada. |
 
-### 2.4. Diagrama (a produzir)
+### 2.4. Diagrama da VPC
 
-Crie o diagrama visual da VPC `10.20.0.0/16` com as 3 sub-redes, seus CIDRs, o Internet Gateway,
-o NAT Gateway e o sentido das setas de tráfego, e salve em `radar-enem-network/evidencias/04_diagrama_vpc.png`.
-Esboço do fluxo:
+O diagrama visual da VPC `10.20.0.0/16` (3 sub-redes, CIDRs, Internet Gateway, NAT Gateway e setas
+de fluxo) já está pronto em `radar-enem-network/evidencias/`, em dois formatos:
+
+- `diagrama_vpc.svg` — exporte como PNG (`04_diagrama_vpc.png`) ou use direto no PDF.
+- `diagrama_vpc.mmd` — fonte Mermaid (renderiza no GitHub / editável em mermaid.live).
+
+Para gerar o PNG no Codespace: `bash scripts/06_gerar_diagrama_png.sh`.
+
+Esboço do fluxo representado no diagrama:
 
 ```
 Usuarios (HTTPS)
