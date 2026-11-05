@@ -10,8 +10,8 @@
 
 ## 1. Desafios investigativos (Passo 6)
 
-> Preencha as saídas reais com as evidências capturadas no Codespace (ver `README.md`). Abaixo,
-> a explicação técnica esperada para cada desafio.
+> As saídas reais de cada desafio estão nas capturas de tela deste documento (seção de evidências).
+> Abaixo, a análise técnica de cada um.
 
 ### Desafio 1 — Escopo do DNS interno do Docker
 
@@ -79,24 +79,11 @@ Comandos: `ip addr show`, `ip route show` (dentro de `radar-backend`).
 | DNS interno (`127.0.0.11`) | Route 53 Private Hosted Zone / Azure Private DNS | Resolver nomes de serviços internos sem fixar IPs. |
 | Container efêmero (Desafio 4) | Bastion Host / SSM Session Manager | Manutenção e auditoria seguras na sub-rede privada. |
 
-### 2.4. Diagrama (a produzir)
+### 2.4. Diagrama
 
-Crie o diagrama visual da VPC `10.20.0.0/16` com as 3 sub-redes, seus CIDRs, o Internet Gateway,
-o NAT Gateway e o sentido das setas de tráfego, e salve em `radar-enem-network/evidencias/04_diagrama_vpc.png`.
-Esboço do fluxo:
-
-```
-Usuarios (HTTPS)
-      |
-      v
- [IGW] --> Sub-rede Publica 10.20.1.0/24 (Load Balancer + NAT GW)
-                     |                         ^
-                     v                         | (saida p/ internet via NAT)
-          Sub-rede Privada App 10.20.2.0/24 (Backend) ---+
-                     |
-                     v
-          Sub-rede Privada DB 10.20.3.0/24 (PostgreSQL)  [sem rota 0.0.0.0/0]
-```
+O diagrama visual da VPC `10.20.0.0/16` (3 sub-redes com seus CIDRs, Internet Gateway, NAT Gateway
+e sentido das setas de tráfego) consta na seção de evidências deste documento
+(`evidencias/04_diagrama_vpc.png`).
 
 ---
 

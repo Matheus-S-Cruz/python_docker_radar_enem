@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Aula 11 — Redes e Containers com Docker — Mini Radar ENEM</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    color: #1f2933;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  h1, h2, h3 { color: #0b2e6b; line-height: 1.25; }
+  h1 { font-size: 20pt; margin: 0 0 4px; }
+  h2 { font-size: 15pt; margin: 22px 0 8px; border-bottom: 2px solid #2f6fed; padding-bottom: 4px; }
+  h3 { font-size: 12.5pt; margin: 16px 0 6px; color: #13417a; }
+  p { margin: 6px 0; }
+  code {
+    font-family: "Consolas", "Courier New", monospace;
+    background: #eef2f8; color: #0b2e6b; padding: 1px 5px; border-radius: 3px; font-size: 9.5pt;
+  }
+  pre {
+    background: #0f1b2d; color: #e6edf3; padding: 12px 14px; border-radius: 6px;
+    font-family: "Consolas", "Courier New", monospace; font-size: 9pt; overflow-x: auto; line-height: 1.4;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  blockquote {
+    margin: 10px 0; padding: 8px 14px; background: #f3f6fc;
+    border-left: 4px solid #2f6fed; color: #44506b; font-size: 10pt;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9.5pt; }
+  th, td { border: 1px solid #c9d4e6; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #e7f0ff; color: #0b2e6b; font-weight: 600; }
+  tr:nth-child(even) td { background: #f7faff; }
+
+  .cover { text-align: center; padding-top: 40mm; }
+  .cover .sub { color: #44506b; font-size: 13pt; margin-top: 2px; }
+  .cover .meta { margin-top: 32px; font-size: 12pt; color: #1f2933; }
+  .cover .meta b { color: #0b2e6b; }
+  .cover .tag {
+    display: inline-block; margin-top: 28px; padding: 6px 16px; border-radius: 20px;
+    background: #e7f0ff; color: #0b2e6b; font-weight: 600; font-size: 11pt;
+  }
+  .page-break { page-break-before: always; }
+  .evidence { page-break-inside: avoid; margin: 0 0 16px; }
+  .evidence h3 { margin-top: 0; }
+  .cap { color: #44506b; font-size: 9.5pt; margin: 2px 0 8px; }
+  .shot {
+    width: 100%; border: 1px solid #c9d4e6; border-radius: 6px;
+    background: #0c0c0c; display: block;
+  }
+  .diagram { width: 100%; border: 1px solid #c9d4e6; border-radius: 6px; display: block; }
+  .legend { font-size: 9pt; color: #7a8699; margin-top: 4px; }
+  ul { margin: 6px 0 6px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ CAPA ============ -->
+<section class="cover">
+  <h1>Laboratório Prático: Redes e Containers com Docker</h1>
+  <div class="sub">Isolamento de Serviços e Roteamento — Mini Radar ENEM</div>
+  <div class="meta">
+    <p><b>Unidade Curricular:</b> Computação em Nuvem</p>
+    <p><b>Atividade:</b> Aula 11 — Laboratório hands-on + Incremento 4</p>
+    <p><b>Projeto base:</b> Mini Radar ENEM</p>
+  </div>
+  <div class="tag">Entregável AVA — Evidências + Relatório Técnico</div>
+</section>
+
+<!-- ============ SUMÁRIO DE EVIDÊNCIAS ============ -->
+<section class="page-break">
+  <h2>Sumário dos entregáveis</h2>
+  <table>
+    <thead><tr><th>#</th><th>Entregável</th><th>Onde está neste PDF</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Inspeção da rede interna (<code>backend-net</code>): CIDR, <code>Internal: true</code> e IPs</td><td>Evidência 1</td></tr>
+      <tr><td>2</td><td>Testes de isolamento (Passo 5): proxy OK, proxy✗db, backend✓db</td><td>Evidência 2</td></tr>
+      <tr><td>3</td><td>Os 4 desafios investigativos (Passo 6)</td><td>Evidência 3</td></tr>
+      <tr><td>4</td><td>Diagrama arquitetural da VPC <code>10.20.0.0/16</code> (Incremento 4)</td><td>Evidência 4</td></tr>
+      <tr><td>5</td><td>Relatório técnico de análise e defesa arquitetural</td><td>Seção Relatório Técnico</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Arquitetura validada no laboratório</h3>
+  <pre>                 Internet / Host
+                        |
+                   :8080 (unica porta publicada)
+                        |
+        +-------------- radar-proxy (172.20.10.10) --------------+
+        |              frontend-net  172.20.10.0/24              |
+        |                        |                               |
+        |              radar-backend (172.20.10.20)              |  &lt;- multi-homed
+        +-------------------------------------------------------+
+                                 |  (172.20.20.20)
+        +------------- backend-net 172.20.20.0/24 (internal) ----+
+        |                        |                               |
+        |                  radar-db (172.20.20.50, PostgreSQL)   |  &lt;- sem porta no host
+        +-------------------------------------------------------+</pre>
+  <p><b>Ambiente no ar</b> — <code>docker compose up -d</code>: 3 containers (proxy, backend, db) e 2 redes
+  (frontend-net e backend-net <code>internal</code>). Apenas <code>radar-proxy</code> publica a porta <code>8080</code>.</p>
+  <img class="shot" src="../radar-enem-network/evidencias/subir_ambiente.png" alt="Ambiente subindo">
+  <p class="cap">Figura 0 — <code>docker compose up -d</code>: imagens, redes e containers criados; PostgreSQL pronto; <code>docker compose ps</code>.</p>
+</section>
+
+<!-- ============ EVIDÊNCIA 1 ============ -->
+<section class="page-break">
+  <h2>Evidência 1 — Inspeção da rede interna</h2>
+  <p>Saída de <code>docker network inspect radar-enem-network_backend-net</code> comprovando o bloco CIDR
+  <code>172.20.20.0/24</code>, o status <code>"Internal": true</code> e os IPs atribuídos a
+  <code>radar-backend</code> (<code>.20</code>) e <code>radar-db</code> (<code>.50</code>).</p>
+  <div class="evidence">
+    <img class="shot" src="../radar-enem-network/evidencias/inspecao_rede_1.png" alt="Inspeção da rede 1">
+    <p class="cap">Figura 1.1 — Cabeçalho do <code>inspect</code>: driver bridge, Subnet <code>172.20.20.0/24</code>, Gateway e <code>"Internal": true</code>.</p>
+  </div>
+  <div class="evidence">
+    <img class="shot" src="../radar-enem-network/evidencias/inspecao_rede_2.png" alt="Inspeção da rede 2">
+    <p class="cap">Figura 1.2 — Containers na <code>backend-net</code>: <code>radar-db → 172.20.20.50</code> e <code>radar-backend → 172.20.20.20</code>.</p>
+  </div>
+</section>
+
+<!-- ============ EVIDÊNCIA 2 ============ -->
+<section class="page-break">
+  <h2>Evidência 2 — Testes de isolamento (Passo 5)</h2>
+  <p>Demonstra, na ordem: (a) o proxy público respondendo <code>200 OK</code> em <code>localhost:8080</code>;
+  (b) a <b>falha</b> de <code>radar-proxy → radar-db</code> (o proxy não resolve nem alcança o banco); e
+  (c) o <b>sucesso</b> de <code>radar-backend → radar-db</code> (o backend é multi-homed e participa da rede interna).</p>
+  <blockquote>A descoberta de serviço é provada pela conexão real via <b>nome</b> do container
+  (<code>nc -z -v radar-db 5432</code>): se conecta, o nome resolveu pelo DNS do Docker (<code>127.0.0.11</code>)
+  e existe rota; se não, está isolado.</blockquote>
+  <div class="evidence">
+    <img class="shot" src="../radar-enem-network/evidencias/evidencia_isolamento.png" alt="Testes de isolamento">
+    <p class="cap">Figura 2 — (a) 200 OK + JSON; (b) <code>nc: bad address 'radar-db'</code> → proxy isolado do banco; (c) <code>radar-db (172.20.20.50:5432) open</code> → backend conecta.</p>
+  </div>
+</section>
+
+<!-- ============ EVIDÊNCIA 3 ============ -->
+<section class="page-break">
+  <h2>Evidência 3 — Os 4 desafios investigativos (Passo 6)</h2>
+  <div class="evidence">
+    <h3>Desafio 1 — Escopo do DNS interno</h3>
+    <img class="shot" src="../radar-enem-network/evidencias/evidencia_desafios.png" alt="Desafio 1">
+    <p class="cap">Figura 3.1 — <code>/etc/resolv.conf</code> aponta para <code>127.0.0.11</code>; prova de escopo por conexão: <code>radar-backend</code> resolve/conecta, <code>radar-db</code> não (fora da backend-net).</p>
+  </div>
+  <div class="evidence page-break">
+    <h3>Desafios 2 e 3 — Multi-homing / Chaos (queda da rota pública)</h3>
+    <img class="shot" src="../radar-enem-network/evidencias/evidencia_desafios_2.png" alt="Desafios 2 e 3">
+    <p class="cap">Figura 3.2 — Desafio 2: duas interfaces (<code>eth0=172.20.20.20</code>, <code>eth1=172.20.10.20</code>) e rota default via <code>eth1</code> (frontend-net). Desafio 3: desconexão → erro de gateway (<code>504</code>).</p>
+  </div>
+  <div class="evidence page-break">
+    <h3>Desafios 3 e 4 — Recuperação e Bastion Host</h3>
+    <img class="shot" src="../radar-enem-network/evidencias/evidencia_desafios_3.png" alt="Desafios 3 e 4">
+    <p class="cap">Figura 3.3 — Log do proxy (<code>upstream timed out</code>) e restauração sem reiniciar (<code>200 OK</code>); Desafio 4: container efêmero na backend-net executa <code>psql \l</code> listando o banco <code>radarenem</code>.</p>
+  </div>
+  <div class="evidence">
+    <h3>Desafio 4 — Detalhe do acesso via Bastion Host</h3>
+    <img class="shot" src="../radar-enem-network/evidencias/evidencia_desafios_4.png" alt="Desafio 4 detalhe">
+    <p class="cap">Figura 3.4 — Mesmo sem a porta <code>5432</code> exposta no host, o bastion conectado à <code>backend-net</code> alcança o PostgreSQL diretamente pela rede interna.</p>
+  </div>
+</section>
+
+<!-- ============ EVIDÊNCIA 4 — DIAGRAMA ============ -->
+<section class="page-break">
+  <h2>Evidência 4 — Diagrama arquitetural da VPC (Incremento 4)</h2>
+  <p>VPC <code>10.20.0.0/16</code> do Radar ENEM com as 3 sub-redes e seus CIDRs, o Internet Gateway,
+  o NAT Gateway e o sentido das setas de tráfego.</p>
+  <img class="diagram" src="../radar-enem-network/evidencias/04_diagrama_vpc.png" alt="Diagrama da VPC">
+  <p class="cap">Figura 4 — Pública <code>10.20.1.0/24</code> (IGW + LB + NAT GW) · Privada App <code>10.20.2.0/24</code> (saída via NAT) · Privada isolada DB <code>10.20.3.0/24</code> (sem rota <code>0.0.0.0/0</code>).</p>
+</section>
+
+<!-- ============ RELATÓRIO TÉCNICO ============ -->
+<section class="page-break" id="relatorio">
+  <!-- conteúdo do RELATORIO.md renderizado, injetado abaixo -->
+</section>
+
+</body>
+</html>
