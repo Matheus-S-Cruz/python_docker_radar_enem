@@ -1,0 +1,46 @@
+%% Diagrama da arquitetura de rede em nuvem do Radar ENEM (Incremento 4)
+%% VPC 10.20.0.0/16 - renderize em https://mermaid.live e exporte como PNG (04_diagrama_vpc.png)
+flowchart TB
+    users["fa:fa-users Usuarios / Estudantes<br/>(HTTPS 443)"]
+    internet(("Internet"))
+
+    subgraph VPC["VPC Radar ENEM — 10.20.0.0/16"]
+        direction TB
+
+        subgraph PUB["Sub-rede PUBLICA — 10.20.1.0/24"]
+            igw["Internet Gateway (IGW)"]
+            lb["Load Balancer /<br/>Reverse Proxy"]
+            nat["NAT Gateway"]
+        end
+
+        subgraph APP["Sub-rede PRIVADA (App) — 10.20.2.0/24 — saida via NAT"]
+            backend["Backend Radar ENEM<br/>(API + motor estatistico)"]
+        end
+
+        subgraph DB["Sub-rede PRIVADA ISOLADA (DB) — 10.20.3.0/24 — sem rota 0.0.0.0/0"]
+            pg[("PostgreSQL<br/>Microdados ENEM")]
+        end
+    end
+
+    users -->|"HTTPS entrada"| internet
+    internet <-->|"ingress/egress"| igw
+    igw --> lb
+    lb -->|"encaminha requisicoes"| backend
+    backend -->|"consulta SQL 5432<br/>(somente dentro da VPC)"| pg
+
+    %% Saida controlada do backend para a internet (atualizacoes / Microdados do INEP)
+    backend -.->|"egress (updates, INEP)"| nat
+    nat -.->|"traducao p/ IP publico"| internet
+
+    %% Isolamento estrito do banco
+    pg -. "sem caminho para a internet" .-x internet
+
+    classDef pub fill:#e7f0ff,stroke:#2f6fed,stroke-width:1px,color:#0b2e6b;
+    classDef priv fill:#eafaf0,stroke:#1e9e5a,stroke-width:1px,color:#0b4a28;
+    classDef dbnet fill:#fdecec,stroke:#d9534f,stroke-width:1px,color:#7a1c1a;
+    classDef ext fill:#f3f3f3,stroke:#888,color:#333;
+
+    class igw,lb,nat pub;
+    class backend priv;
+    class pg dbnet;
+    class users,internet ext;
