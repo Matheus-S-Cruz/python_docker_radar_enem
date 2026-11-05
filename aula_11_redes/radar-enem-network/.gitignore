@@ -1,5 +1,0 @@
-# Evidencias geradas em texto/imagem ficam fora do versionamento por padrao.
-# Remova as linhas abaixo se quiser versionar suas evidencias.
-evidencias/*.txt
-evidencias/*.png
-evidencias/*.jpg
