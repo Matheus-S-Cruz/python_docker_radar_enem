@@ -1,0 +1,6 @@
+# Dump lógico gerado no Desafio E (opcional versionar — por padrão ignorado)
+backup-radar.sql
+
+# Arquivos temporários
+*.tmp
+*.log
