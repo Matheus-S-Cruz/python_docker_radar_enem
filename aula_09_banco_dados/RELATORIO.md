@@ -5,10 +5,19 @@
 **Disciplina:** Computação em Nuvem
 **Atividade:** Aula 9 — Banco relacional de demonstração e comprovação de persistência com volume Docker
 **Projeto base:** Mini Radar ENEM
-**Data de execução:** _preencher_
+**Data de execução:** 11/11/2026
 
-> As saídas de terminal/SQL abaixo estão com valores de **exemplo**. Substitua pelos resultados reais
-> do seu ambiente e anexe os prints correspondentes da pasta [`evidencias/`](evidencias/).
+### Ambiente de execução
+
+| Item | Valor |
+|---|---|
+| Runtime de containers | **Docker 29.9.2** (`build a82e5289`) |
+| Imagem do banco | `postgres:16` → **PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2)** |
+| Volume nomeado | `radar-db-dados` (driver `local`) |
+| Porta publicada | `5432:5432` |
+
+> As saídas de terminal/SQL reproduzidas abaixo são as **capturas reais** da execução. Os prints
+> correspondentes estão na pasta [`evidencias/`](evidencias/).
 
 ---
 
@@ -17,8 +26,8 @@
 Criar um banco de dados relacional de demonstração no **PostgreSQL 16**, modelar duas tabelas
 relacionadas (`provas` e `questoes`), executar consultas SQL (incluindo `JOIN`) e, principalmente,
 **comprovar a persistência dos dados** removendo e recriando o container sobre o mesmo **volume
-Docker nomeado** (`radar-db-dados`). Ao final, explorar desafios de filtro, atualização, integridade
-referencial, restrição `NOT NULL`, backup lógico, modelagem e segurança.
+Docker nomeado** (`radar-db-dados`). Ao final, explorar desafios de filtro, atualização e integridade
+referencial (foram executados os desafios **A, B e C**, atendendo o mínimo de três).
 
 ---
 
@@ -26,13 +35,19 @@ referencial, restrição `NOT NULL`, backup lógico, modelagem e segurança.
 
 ```bash
 # Verificar o runtime
-docker --version
+$ docker --version
+Docker version 29.9.2-2, build a82e528901260c8df6073311379eac65f92db204
 
 # Criar o volume persistente nomeado
-docker volume create radar-db-dados
+$ docker volume create radar-db-dados
+radar-db-dados
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     radar-db-dados
 
 # Iniciar o PostgreSQL apontando para o volume
-docker run -d \
+$ docker run -d \
   --name radar-db \
   -e POSTGRES_USER=radar \
   -e POSTGRES_PASSWORD=radar_lab_123 \
@@ -40,16 +55,23 @@ docker run -d \
   -p 5432:5432 \
   -v radar-db-dados:/var/lib/postgresql/data \
   postgres:16
+# (imagem postgres:16 baixada do registry)
+f537d6010354e5a9c8950c20f1d70a2eb9e35e7c9c71633298d4be72ede254b0
 
 # Conferir estado
-docker ps
-docker logs radar-db
+$ docker ps
+CONTAINER ID   IMAGE         COMMAND                  STATUS         PORTS                      NAMES
+f537d6010354   postgres:16   "docker-entrypoint.s…"   Up 6 seconds   0.0.0.0:5432->5432/tcp …   radar-db
 ```
+
+Os logs (`docker logs radar-db`) confirmaram a inicialização:
+`database system is ready to accept connections` — PostgreSQL 16.15.
 
 > Alternativa reproduzível: `docker compose up -d` usando o [`docker-compose.yml`](docker-compose.yml)
 > deste diretório, que declara o mesmo serviço e o mesmo volume.
 
-📸 Evidências: `01_docker_version.png`, `02_volume_criado.png`, `03_postgres_rodando.png`
+📸 Evidências: `01_docker_version.png`, `02_volume_criado.png`, `03_postgres_rodando_01.png`,
+`03_postgres_rodando_2.png`
 
 ---
 
@@ -58,17 +80,36 @@ docker logs radar-db
 ### Criação das tabelas (passo 5)
 
 ```sql
-CREATE TABLE provas (...);
-CREATE TABLE questoes (... prova_id INTEGER NOT NULL REFERENCES provas(id) ...);
+CREATE TABLE provas (...);        --> CREATE TABLE
+CREATE TABLE questoes (... prova_id INTEGER NOT NULL REFERENCES provas(id) ...);  --> CREATE TABLE
 ```
 
-Saída esperada: `CREATE TABLE` para cada comando. 📸 `04_criar_tabelas.png`
+Ambos os comandos retornaram `CREATE TABLE`. 📸 `04_criar_tabelas.png`
 
 ### Inserção de dados fictícios (passo 6)
 
-Saída esperada: `INSERT 0 2` (provas) e `INSERT 0 3` (questoes). 📸 `05_inserir_dados.png`
+Saídas reais: `INSERT 0 2` (provas) e `INSERT 0 3` (questoes). 📸 `05_inserir_dados.png`
 
-### Consulta com JOIN (passo 7)
+### Conferência das tabelas e consulta com JOIN (passo 7)
+
+```text
+radar=# SELECT * FROM provas;
+ id | ano  |     nome
+----+------+--------------
+  1 | 2025 | ENEM regular
+  2 | 2024 | ENEM regular
+(2 rows)
+
+radar=# SELECT * FROM questoes;
+ id | prova_id |  assunto   |                    enunciado                    | dificuldade
+----+----------+------------+-------------------------------------------------+-------------
+  1 |        1 | Ecologia   | Questão demonstrativa sobre ecossistemas        | média
+  2 |        1 | Matemática | Questão demonstrativa sobre funções             | alta
+  3 |        2 | Ecologia   | Questão demonstrativa sobre cadeias alimentares | baixa
+(3 rows)
+```
+
+Consulta com **JOIN**:
 
 ```sql
 SELECT q.id, p.ano, q.assunto, q.dificuldade
@@ -77,7 +118,7 @@ JOIN provas AS p ON p.id = q.prova_id
 ORDER BY p.ano DESC, q.assunto;
 ```
 
-Resultado esperado (exemplo):
+Resultado real:
 
 ```text
  id | ano  |  assunto   | dificuldade
@@ -85,6 +126,7 @@ Resultado esperado (exemplo):
   1 | 2025 | Ecologia   | média
   2 | 2025 | Matemática | alta
   3 | 2024 | Ecologia   | baixa
+(3 rows)
 ```
 
 📸 `06_consulta_join.png`
@@ -106,8 +148,20 @@ docker exec -it radar-db psql -U radar -d radar \
   -c "SELECT q.id, p.ano, q.assunto FROM questoes AS q JOIN provas AS p ON p.id = q.prova_id;"
 ```
 
-Resultado esperado: **as três questões continuam presentes**, provando que os dados sobreviveram à
-remoção do container porque residem no volume nomeado `radar-db-dados`.
+Resultado real após recriar o container:
+
+```text
+ id | ano  |  assunto
+----+------+------------
+  1 | 2025 | Ecologia
+  2 | 2025 | Matemática
+  3 | 2024 | Ecologia
+(3 rows)
+```
+
+**As três questões continuam presentes**, provando que os dados sobreviveram à remoção do container
+porque residem no volume nomeado `radar-db-dados`. (Esta consulta foi feita **antes** do desafio B,
+por isso a questão 1 ainda aparece com os dados originais.)
 
 📸 `07_persistencia_apos_recriar.png`
 
@@ -138,57 +192,77 @@ remoção do container porque residem no volume nomeado `radar-db-dados`.
 
 ---
 
-## 6. Resultados dos desafios adicionais (≥ 3)
+## 6. Resultados dos desafios adicionais
 
-### A — Filtro (Ecologia)
+Foram executados **três desafios (A, B e C)**, atendendo ao mínimo exigido pelo roteiro.
+
+### A — Filtro (Ecologia) ✅ executado
 
 ```sql
 SELECT * FROM questoes WHERE assunto = 'Ecologia';
 ```
-Retorna apenas as questões cujo `assunto = 'Ecologia'` (ids 1 e 3). 📸 `08_desafio_A_filtro.png`
+Resultado real (apenas as questões de Ecologia — ids 1 e 3):
 
-### B — Atualização
+```text
+ id | prova_id | assunto  |                    enunciado                    | dificuldade
+----+----------+----------+-------------------------------------------------+-------------
+  1 |        1 | Ecologia | Questão demonstrativa sobre ecossistemas        | média
+  3 |        2 | Ecologia | Questão demonstrativa sobre cadeias alimentares | baixa
+(2 rows)
+```
+📸 `08_desafio_A_filtro.png`
+
+### B — Atualização ✅ executado
 
 ```sql
 UPDATE questoes SET dificuldade = 'baixa' WHERE id = 1;
 SELECT * FROM questoes WHERE id = 1;
 ```
-Saída: `UPDATE 1`; a linha passa a mostrar `dificuldade = baixa`. 📸 `09_desafio_B_update.png`
+Resultado real — `UPDATE 1` e a questão 1 passou de `média` para `baixa`:
 
-### C — Integridade referencial (erro esperado)
+```text
+UPDATE 1
+ id | prova_id | assunto  |                enunciado                 | dificuldade
+----+----------+----------+------------------------------------------+-------------
+  1 |        1 | Ecologia | Questão demonstrativa sobre ecossistemas | baixa
+(1 row)
+```
+📸 `09_desafio_B_update.png`
+
+### C — Integridade referencial ✅ executado (erro esperado)
 
 ```sql
 INSERT INTO questoes (prova_id, assunto, enunciado, dificuldade)
 VALUES (999, 'Teste', 'Registro inválido', 'baixa');
 ```
-Erro esperado:
+Erro real retornado pelo PostgreSQL:
 ```text
-ERROR:  insert or update on table "questoes" violates foreign key constraint ...
+ERROR:  insert or update on table "questoes" violates foreign key constraint "questoes_prova_id_fkey"
 DETAIL:  Key (prova_id)=(999) is not present in table "provas".
 ```
-**Explicação:** a FK impede vincular uma questão a uma prova inexistente — o banco **rejeita** a
-escrita, preservando a consistência. 📸 `10_desafio_C_fk_erro.png`
+**Explicação:** a FK `questoes_prova_id_fkey` impede vincular uma questão a uma prova inexistente — o
+banco **rejeita** a escrita, preservando a consistência (integridade referencial). 📸 `10_desafio_C_fk_erro.png`
 
-### D — Restrição NOT NULL (erro esperado)
+### D — Restrição NOT NULL ⬜ não executado (opcional)
+
+Desafio não realizado nesta entrega (o mínimo de três já foi atendido por A, B e C). Caso queira
+incluí-lo, o comando abaixo deve retornar erro de *not-null constraint* em `assunto`:
 
 ```sql
 INSERT INTO questoes (prova_id, assunto, enunciado)
 VALUES (1, NULL, 'Teste de campo obrigatório');
+-- ERROR: null value in column "assunto" of relation "questoes" violates not-null constraint
 ```
-Erro esperado:
-```text
-ERROR:  null value in column "assunto" of relation "questoes" violates not-null constraint
-```
-**Explicação:** `assunto` é obrigatório; o banco não aceita `NULL`. 📸 `11_desafio_D_notnull_erro.png`
 
-### E — Backup lógico (`pg_dump`)
+### E — Backup lógico (`pg_dump`) ⬜ não executado (opcional)
+
+Desafio não realizado nesta entrega. Para incluí-lo:
 
 ```bash
 docker exec radar-db pg_dump -U radar -d radar > backup-radar.sql
 ls -lh backup-radar.sql
 ```
 Gera um arquivo `.sql` no host com o esquema + dados — útil para restauração/migração.
-📸 `12_desafio_E_backup.png`
 
 ### F — Modelagem: tabela `assuntos` (proposta)
 
@@ -246,9 +320,9 @@ container no mesmo caminho `/var/lib/postgresql/data`.
   de vida independente. Recriar `radar-db` sobre `radar-db-dados` mantém provas e questões — foi o
   que a consulta do item 4 comprovou.
 - **Backup:** persistência **não** é backup. O volume protege contra a destruição do *container*,
-  mas não contra exclusão/corrupção do próprio volume, erro humano ou falha de disco. O `pg_dump`
-  (Desafio E) gera uma cópia lógica externa, que deve ser guardada **fora** do host (ex.: object
-  storage com versionamento) e ter restauração testada periodicamente.
+  mas não contra exclusão/corrupção do próprio volume, erro humano ou falha de disco. Uma cópia
+  lógica (ex.: `pg_dump`, descrito no Desafio E) deve ser guardada **fora** do host (ex.: object
+  storage com versionamento) e ter a restauração testada periodicamente.
 - **Segurança:** credenciais simples, porta exposta e senha em texto claro são aceitáveis só em
   laboratório. Produção exige secrets, menor privilégio, TLS, isolamento de rede e rotação de senha
   (ver Desafio G).
@@ -259,12 +333,13 @@ container no mesmo caminho `/var/lib/postgresql/data`.
 
 O experimento demonstrou, na prática, os fundamentos de um banco relacional conteinerizado: modelagem
 com PK/FK e restrições, consultas com `JOIN`, e — o ponto central — a **persistência via volume
-Docker nomeado**, comprovada ao destruir e recriar o container sem perder os dados. Os desafios
-reforçaram que o banco **ativamente protege a integridade** (rejeitando FK inválida e `NULL` em campo
-obrigatório), que **backup é uma camada distinta** da persistência e que **segurança** depende de
-práticas que vão muito além do que um laboratório usa. A proposta da tabela `assuntos` e as respostas
-às perguntas abaixo indicam como o modelo evoluiria para um cenário real (usuários, desempenho por
-assunto, múltiplos serviços).
+Docker nomeado**, comprovada ao destruir e recriar o container (Docker 29.9.2 / PostgreSQL 16.15) sem
+perder os dados. Os desafios executados (A — filtro, B — atualização, C — integridade referencial)
+reforçaram que o banco **ativamente protege a integridade**, rejeitando a inserção de uma questão com
+`prova_id` inexistente (erro de *foreign key constraint*). A análise registrou ainda que **backup é
+uma camada distinta** da persistência e que **segurança** depende de práticas que vão muito além do
+que um laboratório usa. A proposta da tabela `assuntos` e as respostas às perguntas abaixo indicam
+como o modelo evoluiria para um cenário real (usuários, desempenho por assunto, múltiplos serviços).
 
 ---
 
