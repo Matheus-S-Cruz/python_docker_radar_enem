@@ -5,8 +5,7 @@
 **Disciplina:** Aplicação de Serviços na Nuvem
 **Atividade:** Aula 12 / EaD 4 — Firewalls, segurança de rede e exposição controlada de serviços
 **Projeto base:** Radar ENEM
-**Estudante(s) / Grupo:** _[preencher]_
-**Data de entrega:** _[preencher]_
+**Estudante(s) / Grupo:** Matheus Cruz, João Paulo e Nicolas Mello
 
 ---
 
