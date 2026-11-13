@@ -6,7 +6,7 @@
 **Atividade:** Aula 12 / EaD 4 — Firewalls, segurança de rede e exposição controlada de serviços
 **Projeto base:** Radar ENEM
 **Estudante(s) / Grupo:** Matheus Cruz, João Paulo e Nicolas Mello
-
+**Data da Entrega** 13/11/2026
 ---
 
 ## Etapa 1 — Auditoria de vulnerabilidades e riscos
