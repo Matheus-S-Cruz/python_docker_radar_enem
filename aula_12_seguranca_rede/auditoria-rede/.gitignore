@@ -1,0 +1,5 @@
+# Segredos NUNCA vao para o Git (Checklist - Etapa 3: protecao de credenciais)
+.env
+
+# Saidas .txt geradas pelo script de captura (os prints .png sao versionados)
+evidencias/*.txt

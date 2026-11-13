@@ -1,0 +1,61 @@
+# Aula 12 - CENARIO INSEGURO (o problema a ser auditado)
+#
+# Reproduz, em Docker, a configuracao descrita no roteiro:
+#   - Uma UNICA rede para todas as camadas (equivalente ao Security Group unico / R-01).
+#   - TODAS as portas sensiveis mapeadas para o host (equivalente a liberar 0.0.0.0/0):
+#       frontend 8080, backend 8081, PostgreSQL 5432 (R-03), Redis 6379 (R-04).
+#
+# Objetivo pedagogico: provar, com uma varredura de portas, que banco e cache estao
+# acessiveis "de fora" (do host) -- a falha que a Etapa 1 do RELATORIO documenta.
+#
+# ⚠️ Credenciais APENAS para laboratorio. Nunca use em producao.
+
+name: radar-inseguro
+
+networks:
+  # UMA rede unica: nao ha segmentacao entre apresentacao, aplicacao e dados.
+  radar-net:
+    driver: bridge
+
+services:
+  # CAMADA DE APRESENTACAO (frontend) - legitimamente publica.
+  frontend:
+    image: nginx:alpine
+    container_name: radar-ins-frontend
+    command: >
+      sh -c "echo '{\"camada\":\"frontend\",\"status\":\"ONLINE\"}'
+      > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"
+    ports:
+      - "8080:80"          # OK ser publico (apresentacao)
+    networks: [radar-net]
+
+  # CAMADA DE APLICACAO (API backend) - deveria ser interno, mas aqui esta exposto.
+  backend:
+    image: nginx:alpine
+    container_name: radar-ins-backend
+    command: >
+      sh -c "echo '{\"camada\":\"backend-api\",\"porta\":8080}'
+      > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"
+    ports:
+      - "8081:80"          # FALHA: API exposta diretamente ao host/internet
+    networks: [radar-net]
+
+  # CAMADA DE DADOS - BANCO. FALHA R-03: 5432 publicada para 0.0.0.0/0.
+  db:
+    image: postgres:16-alpine
+    container_name: radar-ins-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-radar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-radar_lab_123}
+      POSTGRES_DB: ${POSTGRES_DB:-radar}
+    ports:
+      - "5432:5432"        # FALHA CRITICA: banco acessivel diretamente de fora
+    networks: [radar-net]
+
+  # CAMADA DE DADOS - CACHE. FALHA R-04: 6379 publicada para 0.0.0.0/0.
+  cache:
+    image: redis:7-alpine
+    container_name: radar-ins-cache
+    ports:
+      - "6379:6379"        # FALHA CRITICA: cache (sem auth por padrao) exposto de fora
+    networks: [radar-net]

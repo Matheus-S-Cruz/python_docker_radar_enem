@@ -1,0 +1,61 @@
+# Aula 12 - CENARIO SEGURO (estado-alvo apos a refatoracao)
+#
+# Aplica o Principio da Exposicao Minima e a segregacao por camadas:
+#   - frontend-net (bridge publica): apenas o reverse proxy publica porta no host.
+#   - backend-net  (internal: true): backend + banco + cache, SEM portas no host.
+#   - O backend e multi-homed (ponte) entre as duas redes; banco/cache so existem na rede interna.
+#
+# Equivalente em nuvem:
+#   frontend-net  -> sub-rede publica  (SG-Frontend: 80/443 de 0.0.0.0/0)
+#   backend-net   -> sub-rede privada  (SG-Backend-API: 8080 so do SG-Frontend; 5432/6379 so do SG-Backend-API)
+#   db / cache    -> sub-rede privada isolada (SG-Dados): nunca publicam porta no host/internet.
+#
+# ⚠️ Credenciais APENAS para laboratorio. Nunca use em producao.
+
+name: radar-seguro
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+    internal: true          # rede privada: sem gateway para fora (isola banco e cache)
+
+services:
+  # PONTO DE ENTRADA PUBLICO (unico com porta no host). Representa o SG-Frontend.
+  proxy:
+    image: nginx:alpine
+    container_name: radar-seg-proxy
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"           # unica porta publicada (80/443 em producao)
+    networks: [frontend-net]
+    depends_on: [backend]
+
+  # BACKEND / API - multi-homed: recebe do proxy (frontend-net) e fala com dados (backend-net).
+  # NAO publica porta no host: so e alcancavel pelo proxy (exposicao minima).
+  backend:
+    image: nginx:alpine
+    container_name: radar-seg-backend
+    command: >
+      sh -c "echo '{\"camada\":\"backend-api\",\"acesso\":\"somente via proxy\"}'
+      > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"
+    networks: [frontend-net, backend-net]
+    depends_on: [db, cache]
+
+  # BANCO - isolado na backend-net (internal). Sem porta no host (corrige R-03).
+  db:
+    image: postgres:16-alpine
+    container_name: radar-seg-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-radar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-radar_lab_123}
+      POSTGRES_DB: ${POSTGRES_DB:-radar}
+    networks: [backend-net]
+
+  # CACHE - isolado na backend-net (internal). Sem porta no host (corrige R-04).
+  cache:
+    image: redis:7-alpine
+    container_name: radar-seg-cache
+    networks: [backend-net]
